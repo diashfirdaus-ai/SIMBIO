@@ -4,12 +4,8 @@
    Menggunakan @google/genai SDK
    ============================================ */
 
-import { GoogleGenAI } from "@google/genai";
-
 // ============ API Configuration ============
-const apiKey = ""; // JANGAN MASUKKAN API KEY DI SINI JIKA DI-PUSH KE GITHUB
-const ai = new GoogleGenAI({ apiKey });
-const MODEL_NAME = "gemini-2.5-flash";
+// Menggunakan Vercel Serverless API (/api/generate)
 
 // ============ Journal Registry ============
 // Built-in journals from the jurnal/ folder
@@ -354,16 +350,23 @@ Hasilkan HANYA JSON.`;
     const retries = 3;
     for (let i = 0; i <= retries; i++) {
         try {
-            const interaction = await ai.models.generateContent({
-                model: MODEL_NAME,
-                contents: text,
-                config: {
+            const response = await fetch('/api/generate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    prompt: text,
                     systemInstruction: systemPrompt,
-                    responseMimeType: "application/json",
-                    responseSchema
-                }
+                    responseSchema: responseSchema
+                })
             });
-            return JSON.parse(interaction.text);
+
+            if (!response.ok) {
+                const err = await response.json();
+                throw new Error(err.error || `HTTP ${response.status}`);
+            }
+
+            const data = await response.json();
+            return JSON.parse(data.text);
         } catch (e) {
             if (i === retries) throw e;
             await new Promise(r => setTimeout(r, 1500 * (i + 1)));
@@ -516,14 +519,23 @@ ${contextData}`;
     inputEl.disabled = true;
 
     try {
-        const interaction = await ai.models.generateContent({
-            model: MODEL_NAME,
-            contents: message,
-            config: { systemInstruction: systemPrompt }
+        const response = await fetch('/api/generate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                prompt: message,
+                systemInstruction: systemPrompt
+            })
         });
 
+        if (!response.ok) {
+            throw new Error("Gagal memanggil API Vercel");
+        }
+        
+        const data = await response.json();
+
         document.getElementById(loadingId)?.remove();
-        appendMessage('bot', interaction.text);
+        appendMessage('bot', data.text);
     } catch (e) {
         document.getElementById(loadingId)?.remove();
         appendMessage('bot', "⚠️ Maaf, terjadi kesalahan saat menghubungi server AI.");
