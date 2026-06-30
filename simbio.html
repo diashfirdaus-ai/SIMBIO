@@ -1,0 +1,1137 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SIMBIO — Knowledge Graph & RAG Chat</title>
+    <meta name="description" content="Analisis jurnal ilmiah mikrobioma kulit menggunakan AI Knowledge Graph dan RAG Chat Assistant.">
+
+    <!-- Fonts & Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+
+    <!-- Vis.js for Network/Graph -->
+    <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+
+    <style>
+        /* ============ SIMBIO Page Styles ============ */
+        body.simbio-page {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Header */
+        .simbio-header {
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-glass);
+            padding: 12px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+            z-index: 100;
+        }
+
+        .simbio-header-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .simbio-header .back-link {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            padding: 6px 14px;
+            border-radius: var(--radius-full);
+            border: 1px solid var(--border-glass);
+            transition: all var(--transition-normal);
+            text-decoration: none;
+        }
+
+        .simbio-header .back-link:hover {
+            color: var(--text-primary);
+            background: var(--bg-glass-hover);
+            border-color: var(--border-active);
+        }
+
+        .simbio-header .brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .simbio-header .brand-icon {
+            width: 36px;
+            height: 36px;
+            background: var(--gradient-primary);
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            color: white;
+            box-shadow: var(--shadow-glow);
+        }
+
+        .simbio-header .brand-text h1 {
+            font-size: 1.1rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+        }
+
+        .simbio-header .brand-text p {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            font-weight: 600;
+        }
+
+        .simbio-header-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+
+        .legend-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            box-shadow: 0 0 6px currentColor;
+        }
+
+        /* Main Content Layout */
+        .simbio-main {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+        }
+
+        /* Left Panel */
+        .left-panel {
+            width: 380px;
+            min-width: 380px;
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border-glass);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+
+        .panel-section {
+            padding: 20px;
+            flex-shrink: 0;
+        }
+
+        .panel-section-grow {
+            padding: 0 20px 20px;
+            flex: 1;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .panel-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 10px;
+        }
+
+        .panel-label i {
+            color: var(--accent-indigo-light);
+        }
+
+        /* Journal Select */
+        .journal-select {
+            width: 100%;
+            padding: 10px 14px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-md);
+            color: var(--text-primary);
+            font-family: var(--font-body);
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all var(--transition-normal);
+            appearance: none;
+            -webkit-appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2394a3b8'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            background-size: 20px;
+            margin-bottom: 12px;
+        }
+
+        .journal-select:focus {
+            outline: none;
+            border-color: var(--accent-indigo);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+        }
+
+        .journal-select option {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        /* Upload area */
+        .upload-area {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .upload-btn {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 10px 16px;
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px dashed rgba(16, 185, 129, 0.3);
+            border-radius: var(--radius-md);
+            color: var(--accent-emerald);
+            font-family: var(--font-body);
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all var(--transition-normal);
+        }
+
+        .upload-btn:hover {
+            background: rgba(16, 185, 129, 0.2);
+            border-color: var(--accent-emerald);
+        }
+
+        .upload-btn input[type="file"] {
+            display: none;
+        }
+
+        /* Textarea */
+        .journal-textarea {
+            width: 100%;
+            height: 160px;
+            padding: 14px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-md);
+            color: var(--text-primary);
+            font-family: var(--font-body);
+            font-size: 0.85rem;
+            line-height: 1.6;
+            resize: none;
+            transition: all var(--transition-normal);
+        }
+
+        .journal-textarea::placeholder {
+            color: var(--text-muted);
+        }
+
+        .journal-textarea:focus {
+            outline: none;
+            border-color: var(--accent-indigo);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+        }
+
+        /* Extract Button */
+        .extract-btn {
+            width: 100%;
+            padding: 14px 20px;
+            background: var(--gradient-primary);
+            border: none;
+            border-radius: var(--radius-md);
+            color: white;
+            font-family: var(--font-heading);
+            font-weight: 700;
+            font-size: 0.9rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: all var(--transition-normal);
+            box-shadow: var(--shadow-glow);
+            margin-top: 12px;
+        }
+
+        .extract-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 40px rgba(99, 102, 241, 0.4);
+        }
+
+        .extract-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .extract-btn i {
+            font-size: 0.85rem;
+        }
+
+        /* Console log */
+        .console-box {
+            flex: 1;
+            min-height: 0;
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-md);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            background: #0c0f1a;
+        }
+
+        .console-header {
+            background: rgba(255, 255, 255, 0.03);
+            border-bottom: 1px solid var(--border-glass);
+            padding: 8px 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.65rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            flex-shrink: 0;
+        }
+
+        .console-header i {
+            color: var(--accent-emerald);
+        }
+
+        .console-body {
+            flex: 1;
+            padding: 12px;
+            overflow-y: auto;
+            font-family: 'JetBrains Mono', 'Fira Code', monospace;
+            font-size: 0.75rem;
+            line-height: 1.6;
+            min-height: 0;
+        }
+
+        .log-entry {
+            margin-bottom: 6px;
+            display: flex;
+            gap: 6px;
+        }
+
+        .log-time {
+            color: var(--text-muted);
+            flex-shrink: 0;
+        }
+
+        .log-info { color: #60a5fa; }
+        .log-success { color: #34d399; }
+        .log-error { color: #f87171; }
+        .log-muted { color: var(--text-muted); }
+
+        /* Right Panel — Graph */
+        .right-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 16px;
+            background: var(--bg-primary);
+            position: relative;
+        }
+
+        .graph-container {
+            flex: 1;
+            position: relative;
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            border: 1px solid var(--border-glass);
+            background: var(--bg-secondary);
+        }
+
+        #mynetwork {
+            width: 100%;
+            height: 100%;
+            background: var(--bg-secondary);
+            outline: none;
+        }
+
+        .graph-toolbar {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            z-index: 10;
+            display: flex;
+            gap: 8px;
+        }
+
+        .graph-toolbar-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 14px;
+            background: rgba(10, 14, 26, 0.8);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-full);
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--text-secondary);
+        }
+
+        .graph-toolbar-badge i {
+            color: var(--accent-indigo-light);
+        }
+
+        .graph-fit-btn {
+            position: absolute;
+            bottom: 12px;
+            right: 12px;
+            z-index: 10;
+            width: 36px;
+            height: 36px;
+            border-radius: var(--radius-md);
+            background: rgba(10, 14, 26, 0.8);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border-glass);
+            color: var(--text-secondary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all var(--transition-normal);
+        }
+
+        .graph-fit-btn:hover {
+            color: var(--accent-indigo-light);
+            border-color: var(--accent-indigo);
+        }
+
+        /* Loading Overlay */
+        .loading-overlay {
+            display: none;
+            position: absolute;
+            inset: 0;
+            background: rgba(10, 14, 26, 0.85);
+            backdrop-filter: blur(8px);
+            z-index: 20;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border-radius: var(--radius-lg);
+        }
+
+        .loading-overlay.active {
+            display: flex;
+        }
+
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid var(--border-glass);
+            border-top-color: var(--accent-indigo);
+            border-left-color: var(--accent-indigo);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 16px;
+        }
+
+        .loading-overlay p {
+            font-weight: 700;
+            font-size: 1rem;
+            animation: pulse-glow 2s ease-in-out infinite;
+        }
+
+        .loading-overlay .sub-text {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-top: 6px;
+            font-weight: 400;
+        }
+
+        /* ============ Floating Chat Widget ============ */
+        .chat-fab {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            width: 56px;
+            height: 56px;
+            background: var(--gradient-primary);
+            border: none;
+            border-radius: 50%;
+            color: white;
+            font-size: 1.2rem;
+            cursor: pointer;
+            box-shadow: var(--shadow-glow);
+            z-index: 50;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all var(--transition-normal);
+        }
+
+        .chat-fab:hover {
+            transform: scale(1.08);
+            box-shadow: 0 0 50px rgba(99, 102, 241, 0.5);
+        }
+
+        .chat-notification {
+            display: none;
+            position: absolute;
+            top: -2px;
+            right: -2px;
+            width: 14px;
+            height: 14px;
+            background: var(--accent-rose);
+            border: 2px solid var(--bg-primary);
+            border-radius: 50%;
+            animation: float 1s ease-in-out infinite;
+        }
+
+        .chat-notification.show {
+            display: block;
+        }
+
+        /* Chat Window */
+        .chat-window {
+            position: fixed;
+            bottom: 96px;
+            right: 24px;
+            width: 360px;
+            max-height: 520px;
+            height: 80vh;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-xl);
+            box-shadow: var(--shadow-lg);
+            z-index: 50;
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+            transform-origin: bottom right;
+            animation: fadeInUp 0.3s ease forwards;
+        }
+
+        .chat-window.open {
+            display: flex;
+        }
+
+        .chat-header {
+            background: var(--gradient-primary);
+            padding: 14px 18px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .chat-header-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: white;
+        }
+
+        .chat-header-avatar {
+            width: 32px;
+            height: 32px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.85rem;
+        }
+
+        .chat-header-info h3 {
+            font-size: 0.85rem;
+            font-weight: 700;
+        }
+
+        .chat-header-info p {
+            font-size: 0.65rem;
+            opacity: 0.8;
+        }
+
+        .chat-close-btn {
+            background: none;
+            border: none;
+            color: rgba(255, 255, 255, 0.7);
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 50%;
+            transition: all var(--transition-fast);
+        }
+
+        .chat-close-btn:hover {
+            color: white;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        /* Chat body */
+        .chat-body {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+            background: var(--bg-tertiary);
+        }
+
+        .chat-lock-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(15, 22, 41, 0.9);
+            backdrop-filter: blur(8px);
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            text-align: center;
+        }
+
+        .chat-lock-overlay.hidden {
+            display: none;
+        }
+
+        .chat-lock-icon {
+            width: 56px;
+            height: 56px;
+            background: rgba(99, 102, 241, 0.1);
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 16px;
+            color: var(--text-muted);
+            font-size: 1.2rem;
+        }
+
+        .chat-lock-overlay h3 {
+            font-size: 0.95rem;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+
+        .chat-lock-overlay p {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        /* Chat messages */
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .chat-msg {
+            display: flex;
+            gap: 10px;
+            max-width: 90%;
+        }
+
+        .chat-msg.user {
+            align-self: flex-end;
+            flex-direction: row-reverse;
+        }
+
+        .chat-avatar {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            flex-shrink: 0;
+        }
+
+        .chat-avatar.bot {
+            background: var(--accent-indigo);
+            color: white;
+        }
+
+        .chat-avatar.human {
+            background: var(--bg-glass);
+            border: 1px solid var(--border-glass);
+            color: var(--text-secondary);
+        }
+
+        .chat-bubble {
+            padding: 10px 14px;
+            border-radius: var(--radius-md);
+            font-size: 0.85rem;
+            line-height: 1.6;
+        }
+
+        .chat-msg:not(.user) .chat-bubble {
+            background: var(--bg-glass);
+            border: 1px solid var(--border-glass);
+            color: var(--text-primary);
+            border-top-left-radius: 4px;
+        }
+
+        .chat-msg.user .chat-bubble {
+            background: var(--accent-indigo);
+            color: white;
+            border-top-right-radius: 4px;
+        }
+
+        /* Typing indicator */
+        .typing-indicator {
+            display: flex;
+            gap: 4px;
+            padding: 12px 16px;
+        }
+
+        .typing-dot {
+            width: 6px;
+            height: 6px;
+            background: var(--text-muted);
+            border-radius: 50%;
+            animation: typing-bounce 1.4s ease-in-out infinite both;
+        }
+
+        .typing-dot:nth-child(1) { animation-delay: -0.32s; }
+        .typing-dot:nth-child(2) { animation-delay: -0.16s; }
+
+        @keyframes typing-bounce {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1); }
+        }
+
+        /* Chat input */
+        .chat-input-area {
+            padding: 12px;
+            border-top: 1px solid var(--border-glass);
+            display: flex;
+            gap: 8px;
+            background: var(--bg-secondary);
+            flex-shrink: 0;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 10px 14px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-md);
+            color: var(--text-primary);
+            font-family: var(--font-body);
+            font-size: 0.85rem;
+            transition: all var(--transition-normal);
+        }
+
+        .chat-input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .chat-input:focus {
+            outline: none;
+            border-color: var(--accent-indigo);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+        }
+
+        .chat-send-btn {
+            width: 42px;
+            height: 42px;
+            background: var(--accent-indigo);
+            border: none;
+            border-radius: var(--radius-md);
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all var(--transition-normal);
+            flex-shrink: 0;
+        }
+
+        .chat-send-btn:hover {
+            background: var(--accent-indigo-light);
+            transform: scale(1.05);
+        }
+
+        /* Error toast */
+        .error-toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--accent-rose);
+            color: white;
+            padding: 14px 20px;
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-md);
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transform: translateX(150%);
+            transition: transform var(--transition-normal);
+        }
+
+        .error-toast.show {
+            transform: translateX(0);
+        }
+
+        .error-toast .toast-title {
+            font-weight: 700;
+            font-size: 0.85rem;
+        }
+
+        .error-toast .toast-msg {
+            font-size: 0.75rem;
+            opacity: 0.9;
+        }
+
+        /* Upload modal */
+        .upload-modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(10, 14, 26, 0.85);
+            backdrop-filter: blur(8px);
+            z-index: 200;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .upload-modal.open {
+            display: flex;
+        }
+
+        .upload-modal-content {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-xl);
+            padding: 40px;
+            width: 480px;
+            max-width: 90vw;
+            text-align: center;
+        }
+
+        .upload-drop-zone {
+            border: 2px dashed rgba(99, 102, 241, 0.3);
+            border-radius: var(--radius-lg);
+            padding: 40px 20px;
+            margin: 24px 0;
+            cursor: pointer;
+            transition: all var(--transition-normal);
+            background: rgba(99, 102, 241, 0.03);
+        }
+
+        .upload-drop-zone:hover,
+        .upload-drop-zone.dragover {
+            border-color: var(--accent-indigo);
+            background: rgba(99, 102, 241, 0.08);
+        }
+
+        .upload-drop-zone i {
+            font-size: 2.5rem;
+            color: var(--accent-indigo-light);
+            margin-bottom: 12px;
+        }
+
+        .upload-drop-zone p {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .upload-drop-zone .file-hint {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 8px;
+        }
+
+        .upload-modal-btns {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+        }
+
+        .upload-modal-btns button {
+            padding: 10px 24px;
+            border-radius: var(--radius-md);
+            font-family: var(--font-heading);
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all var(--transition-normal);
+        }
+
+        .btn-cancel {
+            background: transparent;
+            border: 1px solid var(--border-glass);
+            color: var(--text-secondary);
+        }
+
+        .btn-cancel:hover {
+            background: var(--bg-glass-hover);
+            color: var(--text-primary);
+        }
+
+        .btn-confirm {
+            background: var(--gradient-primary);
+            border: none;
+            color: white;
+            box-shadow: var(--shadow-glow);
+        }
+
+        .btn-confirm:hover {
+            transform: translateY(-1px);
+        }
+
+        .btn-confirm:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .upload-file-name {
+            display: none;
+            margin-top: 12px;
+            padding: 8px 14px;
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            border-radius: var(--radius-md);
+            color: var(--accent-emerald);
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .upload-file-name.show {
+            display: block;
+        }
+
+        /* Responsive */
+        @media (max-width: 900px) {
+            .simbio-main {
+                flex-direction: column;
+            }
+
+            .left-panel {
+                width: 100%;
+                min-width: unset;
+                max-height: 50vh;
+            }
+
+            .simbio-header-right {
+                display: none;
+            }
+        }
+    </style>
+</head>
+
+<body class="simbio-page">
+
+    <!-- Header -->
+    <header class="simbio-header">
+        <div class="simbio-header-left">
+            <a href="index.html" class="back-link">
+                <i class="fa-solid fa-arrow-left"></i> Home
+            </a>
+            <div class="brand">
+                <div class="brand-icon">
+                    <i class="fa-solid fa-dna"></i>
+                </div>
+                <div class="brand-text">
+                    <h1 class="text-gradient">SIMBIO</h1>
+                    <p>Knowledge Graph & RAG Chat</p>
+                </div>
+            </div>
+        </div>
+        <div class="simbio-header-right">
+            <div class="legend-item"><span class="legend-dot" style="background:#10b981;color:#10b981;"></span> Bakteri</div>
+            <div class="legend-item"><span class="legend-dot" style="background:#f43f5e;color:#f43f5e;"></span> Kondisi</div>
+            <div class="legend-item"><span class="legend-dot" style="background:#3b82f6;color:#3b82f6;"></span> Perawatan</div>
+            <div class="legend-item"><span class="legend-dot" style="background:#f59e0b;color:#f59e0b;"></span> Metabolit</div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="simbio-main">
+
+        <!-- Left Panel -->
+        <aside class="left-panel">
+            <div class="panel-section">
+                <div class="panel-label"><i class="fa-solid fa-book-medical"></i> Sumber Jurnal</div>
+                <select class="journal-select" id="journalSelect" onchange="handleSelectChange()">
+                    <option value="">-- Ketik / Tempel Manual --</option>
+                </select>
+
+                <div class="upload-area">
+                    <button class="upload-btn" onclick="openUploadModal()">
+                        <i class="fa-solid fa-cloud-arrow-up"></i> Upload Jurnal
+                    </button>
+                </div>
+
+                <textarea class="journal-textarea" id="inputText"
+                    placeholder="Ketik atau tempel teks abstrak jurnal medis di sini..."></textarea>
+
+                <button class="extract-btn" id="extractBtn">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                    Ekstrak Knowledge Graph
+                </button>
+            </div>
+
+            <!-- Console Log -->
+            <div class="panel-section-grow">
+                <div class="console-box">
+                    <div class="console-header">
+                        <i class="fa-solid fa-terminal"></i> Log Sistem
+                    </div>
+                    <div class="console-body" id="consoleLog">
+                        <div class="log-entry">
+                            <span class="log-time">[--:--:--]</span>
+                            <span class="log-muted"><i class="fa-solid fa-check"></i> Menunggu input jurnal...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Right Panel: Graph -->
+        <section class="right-panel">
+            <div class="graph-container">
+                <div class="graph-toolbar">
+                    <div class="graph-toolbar-badge">
+                        <i class="fa-solid fa-diagram-project"></i> Visualisasi
+                    </div>
+                </div>
+                <button class="graph-fit-btn" onclick="network.fit()" title="Pusatkan Graf">
+                    <i class="fa-solid fa-expand"></i>
+                </button>
+
+                <!-- Loading Overlay -->
+                <div class="loading-overlay" id="loadingOverlay">
+                    <div class="loading-spinner"></div>
+                    <p>Menganalisis Teks Medis...</p>
+                    <p class="sub-text">Mengekstrak Entitas & Relasi</p>
+                </div>
+
+                <!-- Vis.js Container -->
+                <div id="mynetwork"></div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Floating Chat Button -->
+    <button class="chat-fab" id="chatFab" onclick="toggleChat()">
+        <i class="fa-solid fa-robot" id="chatFabIcon"></i>
+        <span class="chat-notification" id="chatNotif"></span>
+    </button>
+
+    <!-- Chat Window -->
+    <div class="chat-window" id="chatWindow">
+        <div class="chat-header">
+            <div class="chat-header-left">
+                <div class="chat-header-avatar">
+                    <i class="fa-solid fa-robot"></i>
+                </div>
+                <div class="chat-header-info">
+                    <h3>RAG Assistant</h3>
+                    <p>Tanya seputar grafik</p>
+                </div>
+            </div>
+            <button class="chat-close-btn" onclick="toggleChat()">
+                <i class="fa-solid fa-xmark fa-lg"></i>
+            </button>
+        </div>
+
+        <div class="chat-body">
+            <!-- Lock Overlay -->
+            <div class="chat-lock-overlay" id="chatLockOverlay">
+                <div class="chat-lock-icon">
+                    <i class="fa-solid fa-lock"></i>
+                </div>
+                <h3>Konteks Belum Tersedia</h3>
+                <p>Ekstrak Knowledge Graph terlebih dahulu agar AI dapat menjawab.</p>
+            </div>
+
+            <div class="chat-messages" id="chatHistory">
+                <div class="chat-msg">
+                    <div class="chat-avatar bot"><i class="fa-solid fa-robot"></i></div>
+                    <div class="chat-bubble">Halo! Saya RAG Assistant. Saya siap menjawab pertanyaan terkait entitas atau relasi yang ada di grafik.</div>
+                </div>
+            </div>
+
+            <div class="chat-input-area">
+                <input type="text" class="chat-input" id="chatInput" placeholder="Ketik pertanyaan..." onkeypress="handleChatKeyPress(event)" autocomplete="off">
+                <button class="chat-send-btn" onclick="sendChatMessage()">
+                    <i class="fa-solid fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Upload Modal -->
+    <div class="upload-modal" id="uploadModal">
+        <div class="upload-modal-content">
+            <h2 style="margin-bottom: 4px;"><i class="fa-solid fa-file-arrow-up" style="color: var(--accent-indigo-light);"></i></h2>
+            <h3>Upload Jurnal Baru</h3>
+            <p style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 8px;">Pilih file teks (.txt) atau dokumen (.pdf) yang berisi abstrak jurnal</p>
+
+            <div class="upload-drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
+                <i class="fa-solid fa-cloud-arrow-up"></i>
+                <p>Klik atau drag & drop file di sini</p>
+                <p class="file-hint">Format yang didukung: .txt, .pdf</p>
+            </div>
+            <input type="file" id="fileInput" accept=".txt,.pdf,application/pdf" style="display:none;" onchange="handleFileSelect(event)">
+            <div class="upload-file-name" id="uploadFileName"></div>
+
+            <div class="upload-modal-btns">
+                <button class="btn-cancel" onclick="closeUploadModal()">Batal</button>
+                <button class="btn-confirm" id="confirmUploadBtn" onclick="confirmUpload()" disabled>Upload & Muat</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Error Toast -->
+    <div class="error-toast" id="errorToast">
+        <i class="fa-solid fa-circle-exclamation fa-lg"></i>
+        <div>
+            <p class="toast-title">Gagal</p>
+            <p class="toast-msg" id="errorToastMsg"></p>
+        </div>
+    </div>
+
+    <!-- PDF.js for client-side PDF text extraction -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+
+    <script type="importmap">
+    {
+      "imports": {
+        "@google/genai": "https://esm.sh/@google/genai"
+      }
+    }
+    </script>
+    <script type="module" src="js/simbio.js"></script>
+</body>
+
+</html>

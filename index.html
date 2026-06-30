@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SIMBIO — Skin Microbiome Intelligence Platform</title>
+    <meta name="description" content="SIMBIO adalah platform AI untuk analisis knowledge graph mikrobioma kulit dari jurnal ilmiah. Ekstrak, visualisasi, dan eksplorasi data biomedis.">
+
+    <!-- Fonts & Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+
+    <style>
+        /* ============ Hero Section ============ */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+            padding-top: 80px;
+        }
+
+        .hero-bg {
+            position: absolute;
+            inset: 0;
+            z-index: 0;
+        }
+
+        .hero-bg img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            opacity: 0.35;
+        }
+
+        .hero-bg::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(180deg,
+                rgba(10, 14, 26, 0.4) 0%,
+                rgba(10, 14, 26, 0.7) 50%,
+                var(--bg-primary) 100%);
+        }
+
+        .hero-glow {
+            position: absolute;
+            width: 600px;
+            height: 600px;
+            border-radius: 50%;
+            filter: blur(120px);
+            opacity: 0.3;
+            z-index: 0;
+        }
+
+        .hero-glow.glow-1 {
+            top: -200px;
+            left: -100px;
+            background: var(--accent-indigo);
+        }
+
+        .hero-glow.glow-2 {
+            bottom: -200px;
+            right: -100px;
+            background: var(--accent-cyan);
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 2;
+            text-align: center;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 20px;
+            background: rgba(99, 102, 241, 0.12);
+            border: 1px solid rgba(99, 102, 241, 0.25);
+            border-radius: var(--radius-full);
+            color: var(--accent-indigo-light);
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 28px;
+            animation: fadeInDown 0.8s ease forwards;
+        }
+
+        .hero-badge i {
+            font-size: 0.7rem;
+            animation: pulse-glow 2s ease-in-out infinite;
+        }
+
+        .hero h1 {
+            font-size: clamp(3rem, 7vw, 5.5rem);
+            font-weight: 900;
+            letter-spacing: -2px;
+            margin-bottom: 24px;
+            animation: fadeInUp 0.8s ease 0.2s forwards;
+            opacity: 0;
+        }
+
+        .hero h1 .text-gradient {
+            animation: glow-text 4s ease-in-out infinite;
+        }
+
+        .hero .hero-subtitle {
+            font-size: clamp(1rem, 2vw, 1.25rem);
+            color: var(--text-secondary);
+            max-width: 600px;
+            margin: 0 auto 40px;
+            line-height: 1.8;
+            animation: fadeInUp 0.8s ease 0.4s forwards;
+            opacity: 0;
+        }
+
+        .hero-buttons {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            flex-wrap: wrap;
+            animation: fadeInUp 0.8s ease 0.6s forwards;
+            opacity: 0;
+        }
+
+        .hero-stats {
+            display: flex;
+            justify-content: center;
+            gap: 48px;
+            margin-top: 64px;
+            animation: fadeInUp 0.8s ease 0.8s forwards;
+            opacity: 0;
+        }
+
+        .hero-stat {
+            text-align: center;
+        }
+
+        .hero-stat .number {
+            font-family: var(--font-heading);
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--text-primary);
+        }
+
+        .hero-stat .label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 4px;
+        }
+
+        /* ============ Particles ============ */
+        .particles {
+            position: absolute;
+            inset: 0;
+            z-index: 1;
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        .particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: var(--accent-indigo-light);
+            border-radius: 50%;
+            opacity: 0;
+            animation: particle-float linear infinite;
+        }
+
+        /* ============ Slider Section ============ */
+        .slider-section {
+            padding: var(--section-padding);
+            position: relative;
+        }
+
+        .slider-container {
+            position: relative;
+            border-radius: var(--radius-xl);
+            overflow: hidden;
+            box-shadow: var(--shadow-lg);
+            border: 1px solid var(--border-glass);
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .slider-track {
+            display: flex;
+            transition: transform 0.8s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+
+        .slide {
+            min-width: 100%;
+            position: relative;
+        }
+
+        .slide img {
+            width: 100%;
+            aspect-ratio: 16/9;
+            object-fit: cover;
+        }
+
+        .slide-overlay {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(0deg, rgba(10, 14, 26, 0.9) 0%, transparent 60%);
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            padding: 40px;
+        }
+
+        .slide-overlay h3 {
+            font-size: 1.5rem;
+            margin-bottom: 8px;
+            color: white;
+        }
+
+        .slide-overlay p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            max-width: 500px;
+        }
+
+        .slider-controls {
+            position: absolute;
+            bottom: 20px;
+            right: 40px;
+            display: flex;
+            gap: 8px;
+            z-index: 5;
+        }
+
+        .slider-btn {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all var(--transition-normal);
+        }
+
+        .slider-btn:hover {
+            background: rgba(99, 102, 241, 0.5);
+            transform: scale(1.1);
+        }
+
+        .slider-dots {
+            position: absolute;
+            bottom: 32px;
+            left: 40px;
+            display: flex;
+            gap: 8px;
+            z-index: 5;
+        }
+
+        .slider-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            border: none;
+            cursor: pointer;
+            transition: all var(--transition-normal);
+        }
+
+        .slider-dot.active {
+            background: var(--accent-indigo-light);
+            width: 32px;
+            border-radius: 5px;
+        }
+
+        /* ============ Features Section ============ */
+        .features-section {
+            padding: var(--section-padding);
+            position: relative;
+        }
+
+        .features-section::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 800px;
+            height: 800px;
+            background: var(--gradient-glow);
+            pointer-events: none;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 24px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .feature-card {
+            padding: 36px;
+            text-align: center;
+        }
+
+        .feature-icon {
+            width: 72px;
+            height: 72px;
+            margin: 0 auto 24px;
+            border-radius: var(--radius-lg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            position: relative;
+        }
+
+        .feature-icon.icon-indigo {
+            background: rgba(99, 102, 241, 0.12);
+            color: var(--accent-indigo-light);
+            border: 1px solid rgba(99, 102, 241, 0.2);
+        }
+
+        .feature-icon.icon-cyan {
+            background: rgba(6, 182, 212, 0.12);
+            color: var(--accent-cyan);
+            border: 1px solid rgba(6, 182, 212, 0.2);
+        }
+
+        .feature-icon.icon-emerald {
+            background: rgba(16, 185, 129, 0.12);
+            color: var(--accent-emerald);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+
+        .feature-icon.icon-purple {
+            background: rgba(168, 85, 247, 0.12);
+            color: var(--accent-purple);
+            border: 1px solid rgba(168, 85, 247, 0.2);
+        }
+
+        .feature-card h3 {
+            font-size: 1.15rem;
+            margin-bottom: 12px;
+            color: var(--text-primary);
+        }
+
+        .feature-card p {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            line-height: 1.7;
+        }
+
+        /* ============ About Section ============ */
+        .about-section {
+            padding: var(--section-padding);
+            position: relative;
+        }
+
+        .about-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 64px;
+            align-items: center;
+        }
+
+        .about-image {
+            position: relative;
+        }
+
+        .about-image img {
+            border-radius: var(--radius-xl);
+            box-shadow: var(--shadow-lg);
+            border: 1px solid var(--border-glass);
+        }
+
+        .about-image::before {
+            content: '';
+            position: absolute;
+            top: -20px;
+            left: -20px;
+            right: 20px;
+            bottom: 20px;
+            border: 2px solid rgba(99, 102, 241, 0.15);
+            border-radius: var(--radius-xl);
+            z-index: -1;
+        }
+
+        .about-text h2 {
+            font-size: clamp(1.8rem, 3vw, 2.5rem);
+            margin-bottom: 20px;
+        }
+
+        .about-text p {
+            color: var(--text-secondary);
+            font-size: 1rem;
+            line-height: 1.8;
+            margin-bottom: 16px;
+        }
+
+        .about-checklist {
+            list-style: none;
+            margin-top: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .about-checklist li {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+
+        .about-checklist li i {
+            color: var(--accent-emerald);
+            font-size: 0.8rem;
+            width: 24px;
+            height: 24px;
+            background: rgba(16, 185, 129, 0.1);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        /* ============ CTA Section ============ */
+        .cta-section {
+            padding: var(--section-padding);
+            position: relative;
+        }
+
+        .cta-card {
+            background: var(--gradient-card);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-xl);
+            padding: 64px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .cta-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(ellipse at center, rgba(99, 102, 241, 0.08) 0%, transparent 50%);
+            animation: rotate-slow 30s linear infinite;
+        }
+
+        .cta-card h2 {
+            font-size: clamp(1.8rem, 3vw, 2.5rem);
+            margin-bottom: 16px;
+            position: relative;
+        }
+
+        .cta-card p {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            max-width: 500px;
+            margin: 0 auto 32px;
+            position: relative;
+        }
+
+        .cta-card .btn-primary {
+            position: relative;
+        }
+
+        @media (max-width: 768px) {
+            .about-grid {
+                grid-template-columns: 1fr;
+                gap: 40px;
+            }
+
+            .hero-stats {
+                gap: 24px;
+            }
+
+            .cta-card {
+                padding: 40px 24px;
+            }
+
+            .slide-overlay {
+                padding: 24px;
+            }
+
+            .slide-overlay h3 {
+                font-size: 1.1rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Navbar -->
+    <nav class="navbar" id="navbar">
+        <div class="container">
+            <a href="index.html" class="navbar-brand">
+                <div class="logo-icon">
+                    <i class="fa-solid fa-dna"></i>
+                </div>
+                <span class="logo-text">SIMBIO</span>
+            </a>
+
+            <button class="nav-toggle" id="navToggle" onclick="toggleMobileNav()">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+
+            <ul class="navbar-links" id="navLinks">
+                <li><a href="#home" class="active">Home</a></li>
+                <li><a href="#features">Fitur</a></li>
+                <li><a href="#about">Tentang</a></li>
+                <li><a href="simbio.html" class="nav-cta"><i class="fa-solid fa-rocket"></i> Mulai SIMBIO</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero" id="home">
+        <div class="hero-bg">
+            <img src="assets/hero_background.png" alt="Skin Microbiome Research">
+        </div>
+        <div class="hero-glow glow-1"></div>
+        <div class="hero-glow glow-2"></div>
+
+        <!-- Floating Particles -->
+        <div class="particles" id="particles"></div>
+
+        <div class="container">
+            <div class="hero-content">
+                <div class="hero-badge">
+                    <i class="fa-solid fa-circle"></i>
+                    AI-Powered Research Platform
+                </div>
+                <h1>
+                    <span class="text-gradient">SIMBIO</span><br>
+                    Skin Microbiome Intelligence
+                </h1>
+                <p class="hero-subtitle">
+                    Platform AI untuk mengekstrak, memvisualisasikan, dan menganalisis Knowledge Graph dari jurnal ilmiah dermatologi dan mikrobioma kulit.
+                </p>
+                <div class="hero-buttons">
+                    <a href="simbio.html" class="btn-primary">
+                        <i class="fa-solid fa-rocket"></i>
+                        Mulai Analisis
+                    </a>
+                    <a href="#features" class="btn-secondary">
+                        <i class="fa-solid fa-play"></i>
+                        Pelajari Lebih Lanjut
+                    </a>
+                </div>
+
+                <div class="hero-stats">
+                    <div class="hero-stat">
+                        <div class="number text-gradient">4+</div>
+                        <div class="label">Tipe Entitas</div>
+                    </div>
+                    <div class="hero-stat">
+                        <div class="number text-gradient">AI</div>
+                        <div class="label">Gemini Powered</div>
+                    </div>
+                    <div class="hero-stat">
+                        <div class="number text-gradient">RAG</div>
+                        <div class="label">Chat Assistant</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Slider Section -->
+    <section class="slider-section" id="slider">
+        <div class="container">
+            <div class="section-title animate-on-scroll">
+                <div class="badge"><i class="fa-solid fa-images"></i> Galeri</div>
+                <h2>Eksplorasi Visual</h2>
+                <p>Jelajahi berbagai aspek penelitian mikrobioma kulit dan visualisasi data biomedis.</p>
+            </div>
+
+            <div class="slider-container animate-on-scroll delay-1">
+                <div class="slider-track" id="sliderTrack">
+                    <!-- Slide 1 -->
+                    <div class="slide">
+                        <img src="assets/slide_knowledge_graph.png" alt="Knowledge Graph Visualization">
+                        <div class="slide-overlay">
+                            <h3>Knowledge Graph Interaktif</h3>
+                            <p>Visualisasi jaringan entitas biomedis — bakteri, kondisi klinis, metabolit, dan perawatan dalam grafik yang saling terhubung.</p>
+                        </div>
+                    </div>
+                    <!-- Slide 2 -->
+                    <div class="slide">
+                        <img src="assets/slide_skin_microbiome.png" alt="Skin Microbiome Ecosystem">
+                        <div class="slide-overlay">
+                            <h3>Ekosistem Mikrobioma Kulit</h3>
+                            <p>Miliaran mikroorganisme membentuk ekosistem kompleks di kulit — mempengaruhi kesehatan, penyakit, dan respons imun.</p>
+                        </div>
+                    </div>
+                    <!-- Slide 3 -->
+                    <div class="slide">
+                        <img src="assets/slide_ai_analysis.png" alt="AI-Powered Analysis">
+                        <div class="slide-overlay">
+                            <h3>Analisis Berbasis AI</h3>
+                            <p>Ekstraksi otomatis entitas dan relasi dari teks jurnal ilmiah menggunakan model AI generatif terkini.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="slider-dots" id="sliderDots">
+                    <button class="slider-dot active" onclick="goToSlide(0)"></button>
+                    <button class="slider-dot" onclick="goToSlide(1)"></button>
+                    <button class="slider-dot" onclick="goToSlide(2)"></button>
+                </div>
+
+                <div class="slider-controls">
+                    <button class="slider-btn" onclick="prevSlide()">
+                        <i class="fa-solid fa-chevron-left"></i>
+                    </button>
+                    <button class="slider-btn" onclick="nextSlide()">
+                        <i class="fa-solid fa-chevron-right"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features-section" id="features">
+        <div class="container">
+            <div class="section-title animate-on-scroll">
+                <div class="badge"><i class="fa-solid fa-sparkles"></i> Fitur Utama</div>
+                <h2>Teknologi Canggih</h2>
+                <p>SIMBIO menggabungkan AI, Knowledge Graph, dan RAG untuk analisis jurnal biomedis yang komprehensif.</p>
+            </div>
+
+            <div class="features-grid">
+                <div class="feature-card glass-card animate-on-scroll delay-1">
+                    <div class="feature-icon icon-indigo">
+                        <i class="fa-solid fa-diagram-project"></i>
+                    </div>
+                    <h3>Knowledge Graph</h3>
+                    <p>Ekstraksi otomatis entitas biomedis (bakteri, penyakit, metabolit, perawatan) dan visualisasi relasi dalam grafik interaktif.</p>
+                </div>
+
+                <div class="feature-card glass-card animate-on-scroll delay-2">
+                    <div class="feature-icon icon-cyan">
+                        <i class="fa-solid fa-robot"></i>
+                    </div>
+                    <h3>RAG Chat Assistant</h3>
+                    <p>Tanya jawab cerdas berbasis Retrieval-Augmented Generation — AI menjawab berdasarkan konteks grafik dan jurnal yang diekstrak.</p>
+                </div>
+
+                <div class="feature-card glass-card animate-on-scroll delay-3">
+                    <div class="feature-icon icon-emerald">
+                        <i class="fa-solid fa-file-medical"></i>
+                    </div>
+                    <h3>Manajemen Jurnal</h3>
+                    <p>Pilih jurnal dari koleksi yang tersedia atau upload jurnal baru untuk analisis. Mendukung format teks (.txt) untuk fleksibilitas.</p>
+                </div>
+
+                <div class="feature-card glass-card animate-on-scroll delay-4">
+                    <div class="feature-icon icon-purple">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i>
+                    </div>
+                    <h3>AI-Powered Extraction</h3>
+                    <p>Memanfaatkan Gemini AI untuk memahami konteks teks medis, mengidentifikasi entitas, dan memetakan hubungan sebab-akibat secara otomatis.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- About Section -->
+    <section class="about-section" id="about">
+        <div class="container">
+            <div class="about-grid">
+                <div class="about-image animate-on-scroll">
+                    <img src="assets/slide_skin_microbiome.png" alt="Tentang SIMBIO" class="floating-slow">
+                </div>
+                <div class="about-text animate-on-scroll delay-2">
+                    <div class="badge" style="margin-bottom: 20px; display: inline-flex; align-items: center; gap: 8px; padding: 6px 16px; background: rgba(99,102,241,0.1); border: 1px solid rgba(99,102,241,0.2); border-radius: 9999px; color: #818cf8; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1.5px;">
+                        <i class="fa-solid fa-microscope"></i> Tentang SIMBIO
+                    </div>
+                    <h2>Platform Inteligensi untuk <span class="text-gradient">Mikrobioma Kulit</span></h2>
+                    <p>
+                        SIMBIO (Skin Microbiome Intelligence) adalah platform berbasis web yang dirancang untuk membantu peneliti dan praktisi medis dalam menganalisis jurnal ilmiah di bidang dermatologi dan mikrobioma kulit.
+                    </p>
+                    <p>
+                        Dengan memanfaatkan teknologi AI terkini, SIMBIO mengekstrak informasi kunci dari teks abstrak jurnal dan memvisualisasikannya sebagai Knowledge Graph yang interaktif dan mudah dipahami.
+                    </p>
+                    <ul class="about-checklist">
+                        <li><i class="fa-solid fa-check"></i> Ekstraksi Knowledge Graph otomatis dari teks</li>
+                        <li><i class="fa-solid fa-check"></i> 4 kategori entitas biomedis</li>
+                        <li><i class="fa-solid fa-check"></i> Visualisasi grafik interaktif</li>
+                        <li><i class="fa-solid fa-check"></i> RAG Chatbot untuk tanya jawab kontekstual</li>
+                        <li><i class="fa-solid fa-check"></i> Upload dan kelola koleksi jurnal</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta-section">
+        <div class="container">
+            <div class="cta-card animate-on-scroll">
+                <h2>Siap Memulai <span class="text-gradient">Analisis?</span></h2>
+                <p>Buka platform SIMBIO dan mulai eksplorasi Knowledge Graph dari jurnal ilmiah Anda.</p>
+                <a href="simbio.html" class="btn-primary">
+                    <i class="fa-solid fa-rocket"></i>
+                    Buka SIMBIO Sekarang
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-brand">
+                    <div class="logo-icon">
+                        <i class="fa-solid fa-dna"></i>
+                    </div>
+                    <span>SIMBIO</span>
+                </div>
+                <p class="footer-text">&copy; 2025 SIMBIO — Skin Microbiome Intelligence Platform. All rights reserved.</p>
+                <ul class="footer-links">
+                    <li><a href="index.html">Home</a></li>
+                    <li><a href="simbio.html">SIMBIO</a></li>
+                </ul>
+            </div>
+        </div>
+    </footer>
+
+    <script src="js/home.js"></script>
+</body>
+
+</html>
