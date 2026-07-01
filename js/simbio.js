@@ -282,15 +282,16 @@ function initGraph(nodesArray = [], edgesArray = []) {
         edges: {
             arrows: { to: { enabled: true, scaleFactor: 0.7 } },
             font: {
-                size: 11, align: 'middle', face: 'Inter, system-ui, sans-serif',
+                size: 13, align: 'horizontal', face: 'Inter, system-ui, sans-serif',
                 background: 'rgba(15, 22, 41, 0.9)', strokeWidth: 0, color: '#94a3b8'
             },
             color: { color: '#334155', highlight: '#6366f1' },
             smooth: { type: 'dynamic' },
-            width: 2
+            width: 2,
+            length: 300
         },
         physics: {
-            barnesHut: { gravitationalConstant: -3000, springConstant: 0.04, springLength: 220 },
+            barnesHut: { gravitationalConstant: -3500, springConstant: 0.02, springLength: 300 },
             stabilization: { iterations: 150 }
         },
         interaction: { hover: true, tooltipDelay: 200 }
@@ -298,6 +299,21 @@ function initGraph(nodesArray = [], edgesArray = []) {
 
     if (network) network.destroy();
     network = new vis.Network(container, { nodes, edges }, options);
+
+    // Lock nodes in place after user drags them so they can arrange the graph to read edges
+    network.on("dragStart", function (params) {
+        if (params.nodes && params.nodes.length > 0) {
+            const updates = params.nodes.map(nodeId => ({ id: nodeId, fixed: false }));
+            nodes.update(updates);
+        }
+    });
+
+    network.on("dragEnd", function (params) {
+        if (params.nodes && params.nodes.length > 0) {
+            const updates = params.nodes.map(nodeId => ({ id: nodeId, fixed: true }));
+            nodes.update(updates);
+        }
+    });
 
     // expose network globally so graph-fit-btn works
     window.network = network;
