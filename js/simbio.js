@@ -438,6 +438,9 @@ document.getElementById('extractBtn').addEventListener('click', async () => {
             document.getElementById('chatNotif').classList.add('show');
         }
 
+        // Show Skincare Button
+        document.getElementById('skincareBtn').style.display = 'flex';
+
         graphData.entities.forEach(ent => logMsg(`[${ent.type}] ${ent.label}`, "muted"));
 
     } catch (error) {
@@ -561,3 +564,80 @@ ${contextData}`;
         inputEl.focus();
     }
 };
+
+// ============ Skincare AI Recommendation ============
+window.openSkincareModal = async function () {
+    const modal = document.getElementById('skincareModal');
+    const content = document.getElementById('skincareResultContent');
+    
+    modal.classList.add('open');
+    
+    // Reset to loading state
+    content.innerHTML = `
+        <div style="display: flex; align-items: center; justify-content: center; padding: 40px; flex-direction: column; gap: 16px;">
+            <div class="loading-spinner" style="border-top-color: #f43f5e; border-left-color: #f43f5e; margin: 0;"></div>
+            <p style="color: var(--text-muted); font-weight: 500;">AI sedang memformulasi rekomendasi skincare...</p>
+        </div>
+    `;
+
+    if (!window.currentGraphData) {
+        content.innerHTML = `<p style="color: var(--accent-rose); text-align: center;">Gagal: Tidak ada data hasil analisis jurnal.</p>`;
+        return;
+    }
+
+    try {
+        const sourceText = document.getElementById('inputText').value;
+        const contextData = JSON.stringify(window.currentGraphData);
+
+        const systemPrompt = `Anda adalah seorang Dokter Kulit Ahli (Dermatologist) dan Spesialis Skincare Formulator.
+Tugas Anda adalah memberikan rekomendasi kandungan skincare (skincare ingredients) berdasarkan hasil analisis mikrobioma/jurnal berikut.
+Berikan rekomendasi yang spesifik (misal: Salicylic Acid 2%, Niacinamide, Ceramide, dll) dan jelaskan secara singkat mengapa kandungan tersebut cocok berdasarkan kondisi dan mikroba yang terdeteksi di data.
+Gunakan format HTML sederhana (h4, ul, li, p, strong) agar rapi saat dirender di web. Jangan gunakan markdown (***).
+Fokus pada:
+1. Active Ingredients untuk mengatasi masalah.
+2. Barrier Support / Soothing Ingredients.
+3. Hal yang harus dihindari (Avoid).
+Jawab dalam bahasa Indonesia yang profesional dan mudah dipahami.`;
+
+        const response = await fetch('/api/generate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                prompt: "Tolong berikan rekomendasi skincare berdasarkan data jurnal dan knowledge graph ini.",
+                systemInstruction: systemPrompt + "\\n\\nData Jurnal:\\n" + sourceText + "\\n\\nKnowledge Graph:\\n" + contextData
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error("Gagal memanggil API AI");
+        }
+        
+        const data = await response.json();
+        
+        content.innerHTML = `
+            <div style="background: rgba(244, 63, 94, 0.1); border-left: 4px solid #f43f5e; padding: 12px 16px; border-radius: 4px; margin-bottom: 20px;">
+                <p style="margin: 0; font-size: 0.85rem; color: #f43f5e;">
+                    <strong><i class="fa-solid fa-robot"></i> Rekomendasi Personal AI</strong><br>
+                    Rekomendasi ini diformulasikan khusus berdasarkan entitas (Bakteri, Kondisi, Treatment) yang berhasil diekstrak dari abstrak jurnal Anda.
+                </p>
+            </div>
+            <div class="skincare-html-content" style="display: flex; flex-direction: column; gap: 10px;">
+                ${data.text}
+            </div>
+        `;
+        logMsg("Rekomendasi Skincare AI berhasil dimuat.", "success");
+    } catch (e) {
+        content.innerHTML = `
+            <div style="text-align: center; color: var(--accent-rose); padding: 20px;">
+                <i class="fa-solid fa-triangle-exclamation fa-2x" style="margin-bottom: 10px;"></i>
+                <p>Gagal memuat rekomendasi: ${e.message}</p>
+            </div>
+        `;
+        logMsg("Skincare error: " + e.message, "error");
+    }
+};
+
+window.closeSkincareModal = function () {
+    document.getElementById('skincareModal').classList.remove('open');
+};
+
