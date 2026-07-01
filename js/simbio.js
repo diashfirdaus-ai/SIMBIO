@@ -576,7 +576,7 @@ window.openSkincareModal = async function () {
     content.innerHTML = `
         <div style="display: flex; align-items: center; justify-content: center; padding: 40px; flex-direction: column; gap: 16px;">
             <div class="loading-spinner" style="border-top-color: #f43f5e; border-left-color: #f43f5e; margin: 0;"></div>
-            <p style="color: var(--text-muted); font-weight: 500;">AI sedang memformulasi rekomendasi skincare...</p>
+            <p style="color: var(--text-muted); font-weight: 500;">AI sedang memformulasi analisis...</p>
         </div>
     `;
 
@@ -589,21 +589,21 @@ window.openSkincareModal = async function () {
         const sourceText = document.getElementById('inputText').value;
         const contextData = JSON.stringify(window.currentGraphData);
 
-        const systemPrompt = `Anda adalah seorang Dokter Kulit Ahli (Dermatologist) dan Spesialis Skincare Formulator.
-Tugas Anda adalah memberikan rekomendasi kandungan skincare (skincare ingredients) berdasarkan hasil analisis mikrobioma/jurnal berikut.
-Berikan rekomendasi yang spesifik (misal: Salicylic Acid 2%, Niacinamide, Ceramide, dll) dan jelaskan secara singkat mengapa kandungan tersebut cocok berdasarkan kondisi dan mikroba yang terdeteksi di data.
+        const systemPrompt = `Anda adalah seorang Ahli Mikrobioma dan Spesialis Formulasi Bioteknologi.
+Tugas Anda adalah memberikan analisis formulasi inovatif berdasarkan hasil ekstraksi mikrobioma/jurnal berikut.
+Berikan ide formulasi yang spesifik, target mikroba, mekanisme kerja, dan potensi aplikasi medis atau kosmetika berdasarkan kondisi dan mikroba yang terdeteksi di data.
 Gunakan format HTML sederhana (h4, ul, li, p, strong) agar rapi saat dirender di web. Jangan gunakan markdown (***).
 Fokus pada:
-1. Active Ingredients untuk mengatasi masalah.
-2. Barrier Support / Soothing Ingredients.
-3. Hal yang harus dihindari (Avoid).
+1. Target Mikroba & Mekanisme.
+2. Usulan Komposisi Formulasi / Agen Bioaktif.
+3. Potensi Aplikasi (Medis/Topikal).
 Jawab dalam bahasa Indonesia yang profesional dan mudah dipahami.`;
 
         const response = await fetch('/api/generate', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                prompt: "Tolong berikan rekomendasi skincare berdasarkan data jurnal dan knowledge graph ini.",
+                prompt: "Tolong berikan usulan analisis formulasi baru berdasarkan data jurnal dan knowledge graph ini.",
                 systemInstruction: systemPrompt + "\\n\\nData Jurnal:\\n" + sourceText + "\\n\\nKnowledge Graph:\\n" + contextData
             })
         });
@@ -617,15 +617,16 @@ Jawab dalam bahasa Indonesia yang profesional dan mudah dipahami.`;
         content.innerHTML = `
             <div style="background: rgba(244, 63, 94, 0.1); border-left: 4px solid #f43f5e; padding: 12px 16px; border-radius: 4px; margin-bottom: 20px;">
                 <p style="margin: 0; font-size: 0.85rem; color: #f43f5e;">
-                    <strong><i class="fa-solid fa-robot"></i> Rekomendasi Personal AI</strong><br>
-                    Rekomendasi ini diformulasikan khusus berdasarkan entitas (Bakteri, Kondisi, Treatment) yang berhasil diekstrak dari abstrak jurnal Anda.
+                    <strong><i class="fa-solid fa-robot"></i> Analisis Formulasi AI</strong><br>
+                    Analisis formulasi ini digenerate secara otomatis berdasarkan entitas (Bakteri, Kondisi, Treatment) dari jurnal terkait. <br><br>
+                    <em><strong>Catatan:</strong> Ini hanya hasil analisis kecerdasan buatan (AI) yang bersifat simulasi atau awalan. Dibutuhkan validasi, uji klinis, dan analisis lebih lanjut oleh ahli terkait sebelum diimplementasikan.</em>
                 </p>
             </div>
             <div class="skincare-html-content" style="display: flex; flex-direction: column; gap: 10px;">
                 ${data.text}
             </div>
         `;
-        logMsg("Rekomendasi Skincare AI berhasil dimuat.", "success");
+        logMsg("Analisis Formulasi AI berhasil dimuat.", "success");
     } catch (e) {
         content.innerHTML = `
             <div style="text-align: center; color: var(--accent-rose); padding: 20px;">
